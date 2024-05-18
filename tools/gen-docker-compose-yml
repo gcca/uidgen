@@ -1,0 +1,13 @@
+#!/usr/bin/env fish
+echo services:
+
+for i in (seq $argv[1])
+echo "  app-$i:
+    build: app
+    container_name: uidgen-app-$i
+    ports:
+      - \"800$i:80\"
+    environment:
+      - UIDGEN_DATACENTER_ID=0
+      - UIDGEN_MACHINE_ID=$i"
+end

@@ -1,0 +1,30 @@
+cmake_minimum_required(VERSION 3.25)
+project(uidgen VERSION 1.0 LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 20)
+
+find_package(Python 3.12 COMPONENTS Interpreter Development.Module REQUIRED)
+if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  set(CMAKE_BUILD_TYPE Release CACHE STRING "Type of build." FORCE)
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
+endif()
+
+execute_process(COMMAND "${Python_EXECUTABLE}" -m nanobind --cmake_dir OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE NB_DIR)
+list(APPEND CMAKE_PREFIX_PATH "${NB_DIR}")
+find_package(nanobind CONFIG)
+
+add_library(genuid OBJECT genuid.cpp)
+nanobind_add_module(uidgen uidgen.cc)
+target_link_libraries(uidgen PRIVATE genuid)
+
+option(DISABLE_TESTS "Disable tests" OFF)
+if(NOT DISABLE_TESTS)
+find_package(benchmark REQUIRED)
+add_executable(genuid-bench genuid-bench.cc)
+target_link_libraries(genuid-bench benchmark::benchmark_main genuid)
+
+find_package(GTest REQUIRED)
+add_executable(genuid-test genuid-test.cc)
+target_link_libraries(genuid-test GTest::gtest_main genuid)
+enable_testing()
+gtest_discover_tests(genuid-test)
+endif()
